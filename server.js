@@ -3,15 +3,18 @@ const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 3000;
 const morgan = require("morgan");
-const method0verride = require("method-override");
+const methodOverride = require("method-override");
 const authRoutes = require("./controllers/auth");
 const session = require("express-session");
-const MongoStore = require("connect-mongo");
+const MongoStore = require('connect-mongo')
+const isSignedIn = require('./middleware/is-signed-in')
+const passUserToView = require('./middleware/pass-user-to-view')
+const applicationController = require('./controllers/application')
 
 // Middlewares
 require("./db/connection");
 app.use(morgan("tiny"));
-app.use(method0verride("_method"));
+app.use(methodOverride("_method"));
 app.use(express.urlencoded({ extended: true }));
 app.use(
   session({
@@ -19,40 +22,30 @@ app.use(
     resave: false,
     saveUninitialized: true,
     store: MongoStore.create({
-      mongoUrl: process.env.MONGODB_URI,
+        mongoUrl: process.env.MONGODB_URI
     }),
     cookie: {
-      maxAge: 1000 * 60 * 60 * 24,
-    },
+        maxAge: 1000 * 60 * 60 * 24
+    }
+
   })
 );
 
 // Routes
+app.use(passUserToView)
+
 app.get("/", (req, res) => {
   res.render("index.ejs", {
     user: req.session.user,
   });
 });
-
 app.use("/auth", authRoutes);
 
-// Routes below this, you must be signed in
-app.use((req, res, next) => {
-  if (req.session.user) {
-    next();
-  } else {
-    res.redirect("/");
-  }
-});
+// Routes below this you must be signed in
+app.use(isSignedIn);
 
-app.get("/vip-lounge", (req, res) => {
-  if (req.session.user) {
-    res.send(`Welcome to the party ${req.session.user.username}`);
-  } else {
-    res.send("Sorry, no guest allowed");
-  }
-});
+app.use('/users/:userId/applications', applicationController)
 
 app.listen(PORT, () => {
-  console.log("This ship is sailing on port", PORT);
+  console.log("This ship sailing on port", PORT);
 });
