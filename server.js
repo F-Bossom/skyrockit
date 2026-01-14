@@ -10,9 +10,12 @@ const MongoStore = require('connect-mongo')
 const isSignedIn = require('./middleware/is-signed-in')
 const passUserToView = require('./middleware/pass-user-to-view')
 const applicationController = require('./controllers/application')
+const path = require('path')
+const passMessageToView = require('./middleware/pass-message-to-view')
 
 // Middlewares
 require("./db/connection");
+app.use(express.static(path.join(__dirname, 'public')))
 app.use(morgan("tiny"));
 app.use(methodOverride("_method"));
 app.use(express.urlencoded({ extended: true }));
@@ -30,6 +33,7 @@ app.use(
 
   })
 );
+app.use(passMessageToView)
 
 // Routes
 app.use(passUserToView)
@@ -39,6 +43,7 @@ app.get("/", (req, res) => {
     user: req.session.user,
   });
 });
+
 app.use("/auth", authRoutes);
 
 // Routes below this you must be signed in

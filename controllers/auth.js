@@ -39,7 +39,7 @@ router.post("/sign-in", async (req, res) => {
   };
 
   req.session.save(() => {
-    res.redirect("/");
+    res.redirect(`/users/${userInDB._id}/applications/`);
   });
 });
 
